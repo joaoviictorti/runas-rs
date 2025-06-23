@@ -136,6 +136,8 @@ Options:
 
 ## References
 
+I want to express my gratitude to these projects that inspired me to create `runas-rs` and contribute with some features:
+
 * [Pavel - CreateProcessAsUser vs. CreateProcessWithTokenW](https://www.youtube.com/watch?v=y42BsQJhd5w&t=816s)
 * [Pavel - Window Stations and Desktops](https://scorpiosoftware.net/2023/06/20/window-stations-and-desktops/)
 * [RunasCs](https://github.com/antonioCoco/RunasCs)
