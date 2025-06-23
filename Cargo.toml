@@ -9,10 +9,11 @@ homepage = "https://github.com/joaoviictorti/runas-rs"
 readme = "README.md"
 keywords = ["runas", "windows", "rust", "redteam"]
 categories = ["os", "security"]
-exclude = [
-    ".gitignore",
-    "cli/",
-    "target/",
+include = [
+    "src/**",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
 ]
 
 [dependencies]
