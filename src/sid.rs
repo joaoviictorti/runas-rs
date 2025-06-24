@@ -1,8 +1,9 @@
 use std::{ffi::CString, ptr::null_mut};
-use anyhow::{bail, Result};
+
+use anyhow::{Result, bail};
 use windows_sys::Win32::{
-    Foundation::{GetLastError, FALSE}, 
-    Security::{LookupAccountNameA, SID_NAME_USE}
+    Foundation::{FALSE, GetLastError},
+    Security::{LookupAccountNameA, SID_NAME_USE},
 };
 
 /// Retrieves the Security Identifier (SID) of a user account.
@@ -15,6 +16,7 @@ use windows_sys::Win32::{
 /// # Returns
 ///
 /// * Returns `Ok(Vec<u8>)` containing the SID bytes on success, or an error using `anyhow`.
+#[rustfmt::skip]
 pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
     let full_account_name = if !domain.is_empty() && domain != "." {
         format!("{}\\{}", domain, username)
@@ -27,7 +29,7 @@ pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
     let mut cbsid = 0;
     let mut len = 0;
     let mut sid_name = SID_NAME_USE::default();
-    
+
     unsafe {
         // First call to determine required SID buffer size
         LookupAccountNameA(null_mut(), faqn.as_ptr().cast(), sid, &mut cbsid, null_mut(), &mut len, &mut sid_name);
@@ -43,7 +45,8 @@ pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
             domain_buffer.as_mut_ptr(),
             &mut len,
             &mut sid_name,
-        ) == FALSE {
+        ) == FALSE
+        {
             bail!("LookupAccountNameA Failed With Error: {}", GetLastError());
         }
 

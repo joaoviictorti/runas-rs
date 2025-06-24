@@ -1,42 +1,38 @@
-use anyhow::{bail, Result};
-use core::{
-    ptr,
-    ffi::c_void,
+use std::{
+    ffi::{OsStr, c_void},
+    mem::zeroed,
     ops::BitOr,
-    mem::zeroed, 
+    os::windows::ffi::OsStrExt,
+    ptr,
     ptr::{null, null_mut},
 };
 
-use std::{
-    ffi::OsStr, 
-    os::windows::ffi::OsStrExt
+use anyhow::{Result, bail};
+use windows_sys::{
+    Win32::Storage::FileSystem::{READ_CONTROL, WRITE_DAC},
+    core::w,
+};
+
+#[rustfmt::skip]
+use windows_sys::Win32::{
+    Foundation::*,
+    Security::*,
+    System::{
+        StationsAndDesktops::*,
+        SystemServices::*,
+        Threading::*,
+        Environment::{
+            CreateEnvironmentBlock, 
+            DestroyEnvironmentBlock,
+            GetEnvironmentStringsW
+        },
+    },
 };
 
 use crate::{
-    sid::get_user_sid,
-    acl::{Acl, Object}, 
+    acl::{Acl, Object},
     pipe::Pipe,
-};
-
-use windows_sys::{
-    core::w, 
-    Win32::Storage::FileSystem::{
-        READ_CONTROL, WRITE_DAC
-    }
-};
-use windows_sys::Win32::{
-    Security::*,
-    Foundation::*,
-    System::{
-        Threading::*,
-        SystemServices::*,
-        StationsAndDesktops::*,
-        Environment::{
-            GetEnvironmentStringsW, 
-            DestroyEnvironmentBlock,
-            CreateEnvironmentBlock
-        }, 
-    },
+    sid::get_user_sid,
 };
 
 /// Represents bitwise options for running processes with specific settings.
@@ -47,15 +43,12 @@ pub struct Options(pub u32);
 impl Options {
     /// Option to indicate that the environment should be loaded (`/env`).
     pub const Env: Options = Options(0b00000001);
-
-    /// Option to specify that the user profile should not be loaded (`/noprofile`).
-    pub const NoProfile: Options = Options(0b00000010);
-
-    /// Option to specify that the user profile should be loaded (`/profile`).
-    pub const Profile: Options = Options(0b0000100);
-
     /// Option to specify that credentials should only be used for remote access (`/netonly`).
     pub const NetOnly: Options = Options(0b00001000);
+    /// Option to specify that the user profile should not be loaded (`/noprofile`).
+    pub const NoProfile: Options = Options(0b00000010);
+    /// Option to specify that the user profile should be loaded (`/profile`).
+    pub const Profile: Options = Options(0b0000100);
 
     /// Checks if the current [`Options`] instance contains the specified option.
     ///
@@ -73,7 +66,7 @@ impl Options {
     /// let opts = Options::Env | Options::NetOnly;
     /// assert!(opts.contains(Options::Env));
     /// assert!(opts.contains(Options::NetOnly));
-    /// ``` 
+    /// ```
     fn contains(self, other: Options) -> bool {
         (self.0 & other.0) == other.0
     }
@@ -105,17 +98,17 @@ impl BitOr for Options {
 }
 
 /// A struct to execute processes under a different user account.
-/// 
-/// This struct allows running commands as another user, setting up necessary permissions, 
+///
+/// This struct allows running commands as another user, setting up necessary permissions,
 /// and ensuring the security context is properly configured.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Runas<'a> {
     /// The username of the target account.
     username: &'a str,
-    
+
     /// The password for the account.
     password: &'a str,
-    
+
     /// The domain of the user (optional, defaults to an empty string).
     domain: &'a str,
 
@@ -132,7 +125,7 @@ pub struct Runas<'a> {
     provider: u32,
 
     /// Flags for process creation (such as creating with environment variables).
-    creation_flags: u32
+    creation_flags: u32,
 }
 
 impl Default for Runas<'_> {
@@ -150,7 +143,7 @@ impl Default for Runas<'_> {
             logon_flags: 0,
             creation_flags: 0,
             logon_type: LOGON32_LOGON_INTERACTIVE,
-            provider: LOGON32_PROVIDER_DEFAULT
+            provider: LOGON32_PROVIDER_DEFAULT,
         }
     }
 }
@@ -173,22 +166,13 @@ impl<'a> Runas<'a> {
     /// ```rust,ignore
     /// let runas = Runas::new("example", "example", None);
     /// ```
-    pub fn new(
-        username: &'a str, 
-        password: &'a str, 
-        domain: Option<&'a str>
-    ) -> Self {
-        Self {
-            username,
-            password,
-            domain: domain.unwrap_or("."),
-            ..Default::default()
-        }
+    pub fn new(username: &'a str, password: &'a str, domain: Option<&'a str>) -> Self {
+        Self { username, password, domain: domain.unwrap_or("."), ..Default::default() }
     }
-    
+
     /// Sets the options for the [`Runas`] instance.
     ///
-    /// This function allows the user to configure environment loading and 
+    /// This function allows the user to configure environment loading and
     /// saving credentials using the [`Options`] bitflags.
     ///
     /// # Arguments
@@ -297,23 +281,26 @@ impl<'a> Runas<'a> {
                     }
 
                     // Launch the new process in the user's session using the duplicated token.
-                    let dir = format!("{}\\System32", std::env::var("SystemRoot")?).as_str().to_pwstr();
+                    let dir = format!("{}\\System32", std::env::var("SystemRoot")?)
+                        .as_str()
+                        .to_pwstr();
                     if CreateProcessAsUserW(
-                        h_duptoken, 
+                        h_duptoken,
                         null(),
-                        command.as_mut_ptr(), 
-                        null_mut(), 
-                        null_mut(), 
-                        TRUE, 
-                        CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, 
-                        self.env, 
-                        dir.as_ptr(), 
-                        &si, 
-                        &mut pi
-                    ) == FALSE {
+                        command.as_mut_ptr(),
+                        null_mut(),
+                        null_mut(),
+                        TRUE,
+                        CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                        self.env,
+                        dir.as_ptr(),
+                        &si,
+                        &mut pi,
+                    ) == FALSE
+                    {
                         bail!("CreateProcessAsUserW Failed With Error: {}", GetLastError());
                     }
-                },
+                }
                 CreateProcessFunction::CreateProcessWithToken => {
                     // Authenticate user and obtain token
                     let mut h_token = null_mut();
@@ -334,19 +321,20 @@ impl<'a> Runas<'a> {
 
                     // Launch the process with the duplicated token
                     if CreateProcessWithTokenW(
-                        h_duptoken, 
+                        h_duptoken,
                         self.logon_flags,
-                        null(), 
-                        command.as_mut_ptr(), 
-                        CREATE_NO_WINDOW | self.creation_flags, 
-                        self.env, 
+                        null(),
+                        command.as_mut_ptr(),
+                        CREATE_NO_WINDOW | self.creation_flags,
+                        self.env,
                         null_mut(),
                         &si,
                         &mut pi,
-                    ) == FALSE {
+                    ) == FALSE
+                    {
                         bail!("CreateProcessWithTokenW Failed With Error: {}", GetLastError());
                     }
-                },
+                }
                 CreateProcessFunction::CreateProcessWithLogon => {
                     // Create a new process using the specified user's credential
                     if CreateProcessWithLogonW(
@@ -361,7 +349,8 @@ impl<'a> Runas<'a> {
                         null_mut(),
                         &si,
                         &mut pi,
-                    ) == FALSE {               
+                    ) == FALSE
+                    {
                         bail!("CreateProcessWithLogonW Failed With Error: {}", GetLastError());
                     }
                 }
@@ -389,14 +378,9 @@ impl<'a> Runas<'a> {
         unsafe {
             // Get the handle of the current process's window station
             let old_hwinsta = GetProcessWindowStation();
-            
-            // Open the specified window station with READ_CONTROL and WRITE_DAC permissions
-            let h_winsta = OpenWindowStationW(
-                station_name.as_ptr(),
-                FALSE,
-                READ_CONTROL | WRITE_DAC,
-            );
 
+            // Open the specified window station with READ_CONTROL and WRITE_DAC permissions
+            let h_winsta = OpenWindowStationW(station_name.as_ptr(), FALSE, READ_CONTROL | WRITE_DAC);
             if h_winsta.is_null() {
                 bail!("OpenWindowStationW Failed With Error: {}", GetLastError());
             }
@@ -418,7 +402,7 @@ impl<'a> Runas<'a> {
 
             // Restore the original window station to the process
             SetProcessWindowStation(old_hwinsta);
-            
+
             // Retrieve the security identifier (SID) for the user
             let mut user_sid = get_user_sid(&self.username, &self.domain)?;
 
@@ -439,9 +423,9 @@ impl<'a> Runas<'a> {
             Ok(format!("{name}\\Default"))
         }
     }
-    
+
     /// Decides which process creation API should be used based on privileges and integrity.
-    /// 
+    ///
     /// * [`CreateProcessAsUser`] — If `SeAssignPrimaryTokenPrivilege` is present and integrity is Medium or higher
     /// * [`CreateProcessWithToken`] — If `SeImpersonatePrivilege` is present and integrity is High or higher
     /// * [`CreateProcessWithLogon`] — Default/fallback method
@@ -454,7 +438,7 @@ impl<'a> Runas<'a> {
         let integrity = Token::integrity_level()?;
         let se_impersonate = Token::has_privilege("SeImpersonatePrivilege")?;
         let se_assign = Token::has_privilege("SeAssignPrimaryTokenPrivilege")?;
-        
+
         if se_assign && matches!(integrity, "Medium" | "High" | "System") {
             Ok(CreateProcessFunction::CreateProcessAsUser)
         } else if se_impersonate && matches!(integrity, "High" | "System") {
@@ -480,15 +464,7 @@ impl<'a> Runas<'a> {
         // Retrieve the name of the window station using GetUserObjectInformationW
         let mut buffer = vec![0u16; 256];
         let mut len = 0;
-        if unsafe { 
-            GetUserObjectInformationW(
-                h_winsta,
-                UOI_NAME,
-                buffer.as_mut_ptr().cast(),
-                (buffer.len() * 2) as u32,
-                &mut len,
-            ) 
-        } == FALSE {
+        if unsafe { GetUserObjectInformationW(h_winsta, UOI_NAME, buffer.as_mut_ptr().cast(), (buffer.len() * 2) as u32, &mut len) } == FALSE {
             bail!("GetUserObjectInformationW Failed With Error: {}", unsafe { GetLastError() });
         }
 
@@ -514,15 +490,15 @@ impl Drop for Runas<'_> {
 enum CreateProcessFunction {
     /// https://learn.microsoft.com/pt-br/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessasusera
     CreateProcessAsUser = 0,
-    
+
     /// https://learn.microsoft.com/pt-br/windows/win32/api/winbase/nf-winbase-createprocesswithtokenw
     CreateProcessWithToken = 1,
-    
+
     // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw
     CreateProcessWithLogon = 2,
 }
 
-/// Represents a simple wrapper around Token on Windows. 
+/// Represents a simple wrapper around Token on Windows.
 pub struct Token;
 
 impl Token {
@@ -546,33 +522,33 @@ impl Token {
             if OpenProcessToken(-1isize as HANDLE, TOKEN_QUERY, &mut h_token) == FALSE {
                 bail!("GetProcessWindowStation Failed With Error: {}", GetLastError());
             }
-    
+
             // Make the first call to GetTokenInformation to get the size required
             let mut len = 0;
             GetTokenInformation(h_token, TokenIntegrityLevel, null_mut(), 0, &mut len);
-            if GetLastError() != ERROR_INSUFFICIENT_BUFFER  {
+            if GetLastError() != ERROR_INSUFFICIENT_BUFFER {
                 bail!("GetTokenInformation Failed With Error: {}", GetLastError());
             }
-    
+
             // Allocate memory for the TOKEN_MANDATORY_LABEL structure
             let mut buffer = vec![0u8; len as usize];
             if GetTokenInformation(h_token, TokenIntegrityLevel, buffer.as_mut_ptr().cast(), len, &mut len) == FALSE {
                 bail!("GetTokenInformation [2] Failed With Error: {}", GetLastError());
             }
-    
+
             // Retrieve the actual integrity level information
             let til = buffer.as_ptr() as *const TOKEN_MANDATORY_LABEL;
             let count = GetSidSubAuthorityCount((*til).Label.Sid);
             if count.is_null() {
                 bail!("GetSidSubAuthorityCount Failed With Error: {}", GetLastError());
             }
-    
+
             // Extract the RID from the SID, which represents the integrity level
             let ptr = GetSidSubAuthority((*til).Label.Sid, (*count - 1) as u32);
             if ptr.is_null() {
                 bail!("GetSidSubAuthority Failed With Error: {}", GetLastError());
             }
-            
+
             // Interpret the integrity level RID and print a human-readable labe
             let level = ptr::read(ptr) as i32;
             let label = match level {
@@ -582,7 +558,7 @@ impl Token {
                 SECURITY_MANDATORY_SYSTEM_RID => "System",
                 _ => "Unknown",
             };
-    
+
             Ok(label)
         }
     }
@@ -632,13 +608,13 @@ impl Token {
             for i in 0..header.PrivilegeCount {
                 let luid_attr = privs.add(i as usize);
                 let luid = (*luid_attr).Luid;
-                
+
                 let mut buffer = vec![0u16; 128];
                 let mut len = buffer.len() as u32;
 
                 // Lookup the string name of the privilege from its LUID.
                 if LookupPrivilegeNameW(null(), &luid, buffer.as_mut_ptr(), &mut len) == FALSE {
-                    continue
+                    continue;
                 }
 
                 // Convert UTF-16 buffer into a Rust `String`
@@ -647,7 +623,7 @@ impl Token {
 
                 // Compare the privilege name to the target; if it matches, return true
                 if privilege == name {
-                    return Ok(true)
+                    return Ok(true);
                 }
             }
         }
@@ -670,11 +646,9 @@ impl Token {
                 bail!("OpenProcessToken Failed With Error: {}", GetLastError());
             }
 
-            // Look up the LUID for the given privilege name 
-            let mut token_priv = TOKEN_PRIVILEGES {
-                PrivilegeCount: 1,
-                Privileges: [LUID_AND_ATTRIBUTES { Luid: zeroed(), Attributes: SE_PRIVILEGE_ENABLED}; 1],
-            };
+            // Look up the LUID for the given privilege name
+            let mut token_priv =
+                TOKEN_PRIVILEGES { PrivilegeCount: 1, Privileges: [LUID_AND_ATTRIBUTES { Luid: zeroed(), Attributes: SE_PRIVILEGE_ENABLED }; 1] };
             if LookupPrivilegeValueW(null_mut(), name.to_pwstr().as_ptr(), &mut token_priv.Privileges[0].Luid as *mut LUID) == FALSE {
                 bail!("LookupPrivilegeValueW Failed With Error: {}", GetLastError());
             }
@@ -696,6 +670,9 @@ trait PWSTR {
 
 impl PWSTR for &str {
     fn to_pwstr(&self) -> Vec<u16> {
-        OsStr::new(self).encode_wide().chain(std::iter::once(0)).collect()
+        OsStr::new(self)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect()
     }
 }
