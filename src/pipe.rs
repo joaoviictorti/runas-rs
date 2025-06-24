@@ -21,12 +21,10 @@ impl Pipe {
     /// - The second element is the write handle.
     pub fn create() -> anyhow::Result<(HANDLE, HANDLE)> {
         unsafe {
-            let mut sa =
-                SECURITY_ATTRIBUTES { nLength: size_of::<SECURITY_ATTRIBUTES>() as u32, bInheritHandle: 1, lpSecurityDescriptor: null_mut() };
-
+            let sa = SECURITY_ATTRIBUTES { nLength: size_of::<SECURITY_ATTRIBUTES>() as u32, bInheritHandle: 1, lpSecurityDescriptor: null_mut() };
             let mut h_read = null_mut();
             let mut h_write = null_mut();
-            if CreatePipe(&mut h_read, &mut h_write, &mut sa, 0) == 0 {
+            if CreatePipe(&mut h_read, &mut h_write, &sa, 0) == 0 {
                 return Err(anyhow::anyhow!("Error creating the pipe"));
             }
 

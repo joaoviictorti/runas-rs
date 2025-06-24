@@ -171,9 +171,7 @@ impl<'a> Acl<'a> {
                     }
 
                     // Adds another ACE to DACL with no inheritance propagation and full window station access
-                    if AddAccessAllowedAceEx(new_dacl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE, WINSTA_ALL as u32, self.sid.as_mut_ptr().cast())
-                        == FALSE
-                    {
+                    if AddAccessAllowedAceEx(new_dacl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE, WINSTA_ALL, self.sid.as_mut_ptr().cast()) == FALSE {
                         bail!("Failed to add non-propagating ACE to Windows Station (error {})", GetLastError());
                     }
                 }

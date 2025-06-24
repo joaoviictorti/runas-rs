@@ -255,7 +255,7 @@ impl<'a> Runas<'a> {
             let mut command = command.to_pwstr();
 
             match self.default_process()? {
-                CreateProcessFunction::CreateProcessAsUser => {
+                CreateProcess::AsUser => {
                     // Authenticate user and obtain token
                     let mut h_token = null_mut();
                     if LogonUserW(username.as_ptr(), domain.as_ptr(), password.as_ptr(), self.logon_type, self.provider, &mut h_token) == FALSE {
@@ -274,10 +274,8 @@ impl<'a> Runas<'a> {
                     }
 
                     // Create a new environment block for the user represented by the duplicated token.
-                    if self.env.is_null() {
-                        if CreateEnvironmentBlock(&mut self.env, h_duptoken, FALSE) == FALSE {
-                            bail!("CreateEnvironmentBlock Failed With Error: {}", GetLastError());
-                        }
+                    if self.env.is_null() && CreateEnvironmentBlock(&mut self.env, h_duptoken, FALSE) == FALSE {
+                        bail!("CreateEnvironmentBlock Failed With Error: {}", GetLastError());
                     }
 
                     // Launch the new process in the user's session using the duplicated token.
@@ -301,7 +299,7 @@ impl<'a> Runas<'a> {
                         bail!("CreateProcessAsUserW Failed With Error: {}", GetLastError());
                     }
                 }
-                CreateProcessFunction::CreateProcessWithToken => {
+                CreateProcess::WithToken => {
                     // Authenticate user and obtain token
                     let mut h_token = null_mut();
                     if LogonUserW(username.as_ptr(), domain.as_ptr(), password.as_ptr(), self.logon_type, self.provider, &mut h_token) == FALSE {
@@ -335,7 +333,7 @@ impl<'a> Runas<'a> {
                         bail!("CreateProcessWithTokenW Failed With Error: {}", GetLastError());
                     }
                 }
-                CreateProcessFunction::CreateProcessWithLogon => {
+                CreateProcess::WithLogon => {
                     // Create a new process using the specified user's credential
                     if CreateProcessWithLogonW(
                         username.as_ptr(),
@@ -404,7 +402,7 @@ impl<'a> Runas<'a> {
             SetProcessWindowStation(old_hwinsta);
 
             // Retrieve the security identifier (SID) for the user
-            let mut user_sid = get_user_sid(&self.username, &self.domain)?;
+            let mut user_sid = get_user_sid(self.username, self.domain)?;
 
             // Add the necessary access control entries (ACEs) for the window station and desktop (If it doesn't exist)
             let mut acl_station = Acl::new(h_winsta, &mut user_sid, Object::WindowsStation);
@@ -432,19 +430,19 @@ impl<'a> Runas<'a> {
     ///
     /// # Returns
     ///
-    /// * `Ok(CreateProcessFunction)` - Enum indicating the best available API for process creation
+    /// * `Ok(CreateProcess)` - Enum indicating the best available API for process creation
     /// * `Err(anyhow::Error)` - If privilege or integrity detection fails
-    fn default_process(&self) -> Result<CreateProcessFunction> {
+    fn default_process(&self) -> Result<CreateProcess> {
         let integrity = Token::integrity_level()?;
         let se_impersonate = Token::has_privilege("SeImpersonatePrivilege")?;
         let se_assign = Token::has_privilege("SeAssignPrimaryTokenPrivilege")?;
 
         if se_assign && matches!(integrity, "Medium" | "High" | "System") {
-            Ok(CreateProcessFunction::CreateProcessAsUser)
+            Ok(CreateProcess::AsUser)
         } else if se_impersonate && matches!(integrity, "High" | "System") {
-            Ok(CreateProcessFunction::CreateProcessWithToken)
+            Ok(CreateProcess::WithToken)
         } else {
-            Ok(CreateProcessFunction::CreateProcessWithLogon)
+            Ok(CreateProcess::WithLogon)
         }
     }
 
@@ -487,15 +485,15 @@ impl Drop for Runas<'_> {
 
 /// Defines which Windows API will be used to spawn the process.
 #[derive(Debug, Clone, Copy)]
-enum CreateProcessFunction {
+enum CreateProcess {
     /// https://learn.microsoft.com/pt-br/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessasusera
-    CreateProcessAsUser = 0,
+    AsUser = 0,
 
     /// https://learn.microsoft.com/pt-br/windows/win32/api/winbase/nf-winbase-createprocesswithtokenw
-    CreateProcessWithToken = 1,
+    WithToken = 1,
 
     // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw
-    CreateProcessWithLogon = 2,
+    WithLogon = 2,
 }
 
 /// Represents a simple wrapper around Token on Windows.
