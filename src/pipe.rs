@@ -39,7 +39,7 @@ impl Pipe {
     ///
     /// This function reads from the pipe's read handle and returns the data as a `String`.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `h_read` - The read handle of the pipe.
     ///

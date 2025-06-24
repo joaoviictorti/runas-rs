@@ -59,7 +59,7 @@ impl Options {
 
     /// Checks if the current [`Options`] instance contains the specified option.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `other` - Another `Options` instance to check against.
     ///
@@ -84,7 +84,7 @@ impl BitOr for Options {
 
     /// Combines two [`Options`] instances using a bitwise OR operation.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `rhs` - The right-hand side `Options` instance.
     ///
@@ -158,7 +158,7 @@ impl Default for Runas<'_> {
 impl<'a> Runas<'a> {
     /// Creates a new [`Runas`] instance with user credentials.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `username` - The name of the user account.
     /// * `password` - The password associated with the account.
@@ -191,7 +191,7 @@ impl<'a> Runas<'a> {
     /// This function allows the user to configure environment loading and 
     /// saving credentials using the [`Options`] bitflags.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `flags` - A combination of [`Options`] flags.
     ///
@@ -232,7 +232,7 @@ impl<'a> Runas<'a> {
 
     /// This function logs in with the provided credentials and runs the given command.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `command` - The path to the executable that should be run.
     ///
@@ -589,7 +589,7 @@ impl Token {
 
     /// Checks if the current process token has a specific privilege enabled.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `name` - The name of the privilege to check.
     ///
