@@ -9,6 +9,13 @@
 
 An offensive version of `runas` in Rust with extra features. This crate provides both a CLI and a Rust crate for spawning processes under different Windows user accounts, with support for privileges, secure token manipulation, profile/environment loading, and more.
 
+## Features
+
+- ✅ Supports explicit user credentials for spawning processes under different accounts.
+- ✅ CLI and library support: use it programmatically or directly from the terminal.
+- ✅ Compatible with service and interactive sessions (proper desktop/window station handling).
+- ✅ Enables profile and environment loading using simple bitflag options.
+
 ## Getting started
 
 Add `runas-rs` to your project by updating your `Cargo.toml`:
