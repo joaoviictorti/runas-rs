@@ -7,9 +7,7 @@
 ![Stars](https://img.shields.io/github/stars/joaoviictorti/runas-rs)
 ![License](https://img.shields.io/github/license/joaoviictorti/runas-rs)
 
-An offensive version of `runas` in Rust with extra features
-
-This crate provides both a CLI and a Rust crate for spawning processes under different Windows user accounts, with support for privileges, secure token manipulation, profile/environment loading, and more.
+An offensive version of `runas` in Rust with extra features. This crate provides both a CLI and a Rust crate for spawning processes under different Windows user accounts, with support for privileges, secure token manipulation, profile/environment loading, and more.
 
 ## Getting started
 
