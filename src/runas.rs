@@ -167,7 +167,12 @@ impl<'a> Runas<'a> {
     /// let runas = Runas::new("example", "example", None);
     /// ```
     pub fn new(username: &'a str, password: &'a str, domain: Option<&'a str>) -> Self {
-        Self { username, password, domain: domain.unwrap_or("."), ..Default::default() }
+        Self {
+            username,
+            password,
+            domain: domain.unwrap_or("."),
+            ..Default::default()
+        }
     }
 
     /// Sets the options for the [`Runas`] instance.
@@ -645,8 +650,14 @@ impl Token {
             }
 
             // Look up the LUID for the given privilege name
-            let mut token_priv =
-                TOKEN_PRIVILEGES { PrivilegeCount: 1, Privileges: [LUID_AND_ATTRIBUTES { Luid: zeroed(), Attributes: SE_PRIVILEGE_ENABLED }; 1] };
+            let mut token_priv = TOKEN_PRIVILEGES {
+                PrivilegeCount: 1,
+                Privileges: [LUID_AND_ATTRIBUTES {
+                    Luid: zeroed(),
+                    Attributes: SE_PRIVILEGE_ENABLED,
+                }; 1],
+            };
+
             if LookupPrivilegeValueW(null_mut(), name.to_pwstr().as_ptr(), &mut token_priv.Privileges[0].Luid as *mut LUID) == FALSE {
                 bail!("LookupPrivilegeValueW Failed With Error: {}", GetLastError());
             }

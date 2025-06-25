@@ -19,11 +19,17 @@ impl Pipe {
     /// * Returns a tuple `(HANDLE, HANDLE)`, where:
     /// - The first element is the read handle.
     /// - The second element is the write handle.
+    #[rustfmt::skip]
     pub fn create() -> anyhow::Result<(HANDLE, HANDLE)> {
         unsafe {
-            let sa = SECURITY_ATTRIBUTES { nLength: size_of::<SECURITY_ATTRIBUTES>() as u32, bInheritHandle: 1, lpSecurityDescriptor: null_mut() };
             let mut h_read = null_mut();
             let mut h_write = null_mut();
+            let sa = SECURITY_ATTRIBUTES {
+                nLength: size_of::<SECURITY_ATTRIBUTES>() as u32,
+                bInheritHandle: 1,
+                lpSecurityDescriptor: null_mut(),
+            };
+
             if CreatePipe(&mut h_read, &mut h_write, &sa, 0) == 0 {
                 return Err(anyhow::anyhow!("Error creating the pipe"));
             }
