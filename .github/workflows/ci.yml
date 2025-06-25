@@ -1,4 +1,4 @@
-name: runas-ci
+name: build
 
 on: [push, pull_request]
 
@@ -40,3 +40,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check docs
         run: cargo doc --no-deps --document-private-items
+
+  cli-build:
+    name: Build CLI
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        run: rustup default stable
+
+      - name: Build CLI release
+        run: |
+          cd cli
+          cargo build --release
