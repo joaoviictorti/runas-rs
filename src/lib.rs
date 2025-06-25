@@ -4,6 +4,8 @@
 
 mod acl;
 mod pipe;
-mod runas;
 mod sid;
+
+/// This module handles Runas logic (token duplication, impersonation, etc).
+mod runas;
 pub use runas::*;

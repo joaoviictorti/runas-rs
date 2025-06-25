@@ -1,8 +1,5 @@
 use std::{ffi::c_void, mem::zeroed, ptr::null_mut};
-
 use anyhow::{Result, bail};
-
-#[rustfmt::skip]
 use windows_sys::Win32::{
     Foundation::*,
     Security::*,
@@ -94,7 +91,14 @@ impl<'a> Acl<'a> {
 
             // Allocate the buffer for the security descriptor
             let mut psid = vec![0u8; len as usize];
-            if GetUserObjectSecurity(self.h_object, &requested, psid.as_mut_ptr().cast(), len, &mut len) == FALSE {
+            if GetUserObjectSecurity(
+                self.h_object, 
+                &requested, 
+                psid.as_mut_ptr().cast(), 
+                len, 
+                &mut len
+            ) == FALSE 
+            {
                 bail!("Failed to get user object security (error {})", GetLastError());
             }
 
@@ -102,7 +106,13 @@ impl<'a> Acl<'a> {
             let mut dacl = zeroed();
             let mut dacl_exist = 0;
             let mut dacl_present = 0;
-            if GetSecurityDescriptorDacl(psid.as_mut_ptr().cast(), &mut dacl_present, &mut dacl, &mut dacl_exist) == FALSE {
+            if GetSecurityDescriptorDacl(
+                psid.as_mut_ptr().cast(), 
+                &mut dacl_present, 
+                &mut dacl, 
+                &mut dacl_exist
+            ) == FALSE 
+            {
                 bail!("Failed to get security descriptor DACL (error {})", GetLastError());
             }
 
@@ -171,7 +181,14 @@ impl<'a> Acl<'a> {
                     }
 
                     // Adds another ACE to DACL with no inheritance propagation and full window station access
-                    if AddAccessAllowedAceEx(new_dacl, ACL_REVISION, NO_PROPAGATE_INHERIT_ACE, WINSTA_ALL, self.sid.as_mut_ptr().cast()) == FALSE {
+                    if AddAccessAllowedAceEx(
+                        new_dacl, 
+                        ACL_REVISION, 
+                        NO_PROPAGATE_INHERIT_ACE, 
+                        WINSTA_ALL, 
+                        self.sid.as_mut_ptr().cast()
+                    ) == FALSE 
+                    {
                         bail!("Failed to add non-propagating ACE to Windows Station (error {})", GetLastError());
                     }
                 }
@@ -183,12 +200,23 @@ impl<'a> Acl<'a> {
             }
 
             // Sets the DACL in the security descriptor
-            if SetSecurityDescriptorDacl((&mut security_descriptor as *mut SECURITY_DESCRIPTOR).cast::<c_void>(), TRUE, new_dacl, FALSE) == FALSE {
+            if SetSecurityDescriptorDacl(
+                (&mut security_descriptor as *mut SECURITY_DESCRIPTOR).cast::<c_void>(), 
+                TRUE, 
+                new_dacl, 
+                FALSE
+            ) == FALSE 
+            {
                 bail!("Failed to set security descriptor DACL (error {})", GetLastError());
             }
 
             // Applies the security descriptor to the window station or desktop
-            if SetUserObjectSecurity(self.h_object, &requested, (&mut security_descriptor as *mut SECURITY_DESCRIPTOR).cast::<c_void>()) == FALSE {
+            if SetUserObjectSecurity(
+                self.h_object, 
+                &requested, 
+                (&mut security_descriptor as *mut SECURITY_DESCRIPTOR).cast::<c_void>()
+            ) == FALSE 
+            {
                 bail!("Failed to set user object security (error {})", GetLastError());
             }
 
@@ -213,7 +241,14 @@ impl<'a> Acl<'a> {
 
             // Allocate the buffer for the security descriptor
             let mut psid = vec![0u8; len as usize];
-            if GetUserObjectSecurity(self.h_object, &requested, psid.as_mut_ptr().cast(), len, &mut len) == FALSE {
+            if GetUserObjectSecurity(
+                self.h_object, 
+                &requested, 
+                psid.as_mut_ptr().cast(), 
+                len, 
+                &mut len
+            ) == FALSE 
+            {
                 bail!("Failed to get user object security (error {})", GetLastError());
             }
 
@@ -221,7 +256,13 @@ impl<'a> Acl<'a> {
             let mut dacl = zeroed();
             let mut dacl_exist = 0;
             let mut dacl_present = 0;
-            if GetSecurityDescriptorDacl(psid.as_mut_ptr().cast(), &mut dacl_present, &mut dacl, &mut dacl_exist) == FALSE {
+            if GetSecurityDescriptorDacl(
+                psid.as_mut_ptr().cast(), 
+                &mut dacl_present, 
+                &mut dacl, 
+                &mut dacl_exist
+            ) == FALSE 
+            {
                 bail!("Failed to get security descriptor DACL (error {})", GetLastError());
             }
 
@@ -264,7 +305,9 @@ impl<'a> Acl<'a> {
                             // Match ACE mask and flags to expected permissions
                             match self.object {
                                 Object::WindowsStation => {
-                                    if mask == GENERIC_ALL && flags & (CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE | OBJECT_INHERIT_ACE) != 0 {
+                                    if mask == GENERIC_ALL && flags & 
+                                        (CONTAINER_INHERIT_ACE | INHERIT_ONLY_ACE | OBJECT_INHERIT_ACE) != 0 
+                                    {
                                         ace_win_inherit = true;
                                     }
 

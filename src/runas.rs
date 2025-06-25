@@ -8,22 +8,18 @@ use std::{
 };
 
 use anyhow::{Result, bail};
-use windows_sys::{
-    Win32::Storage::FileSystem::{READ_CONTROL, WRITE_DAC},
-    core::w,
-};
-
-#[rustfmt::skip]
+use windows_sys::core::w;
 use windows_sys::Win32::{
     Foundation::*,
     Security::*,
+    Storage::FileSystem::{READ_CONTROL, WRITE_DAC},
     System::{
         StationsAndDesktops::*,
         SystemServices::*,
         Threading::*,
         Environment::{
             CreateEnvironmentBlock, 
-            DestroyEnvironmentBlock,
+            DestroyEnvironmentBlock, 
             GetEnvironmentStringsW
         },
     },
@@ -43,10 +39,13 @@ pub struct Options(pub u32);
 impl Options {
     /// Option to indicate that the environment should be loaded (`/env`).
     pub const Env: Options = Options(0b00000001);
+    
     /// Option to specify that credentials should only be used for remote access (`/netonly`).
     pub const NetOnly: Options = Options(0b00001000);
+    
     /// Option to specify that the user profile should not be loaded (`/noprofile`).
     pub const NoProfile: Options = Options(0b00000010);
+
     /// Option to specify that the user profile should be loaded (`/profile`).
     pub const Profile: Options = Options(0b0000100);
 
@@ -263,7 +262,15 @@ impl<'a> Runas<'a> {
                 CreateProcess::AsUser => {
                     // Authenticate user and obtain token
                     let mut h_token = null_mut();
-                    if LogonUserW(username.as_ptr(), domain.as_ptr(), password.as_ptr(), self.logon_type, self.provider, &mut h_token) == FALSE {
+                    if LogonUserW(
+                        username.as_ptr(),
+                        domain.as_ptr(),
+                        password.as_ptr(),
+                        self.logon_type,
+                        self.provider,
+                        &mut h_token
+                    ) == FALSE 
+                    {
                         bail!("LogonUserW Failed With Error [CreateProcessAsUser]: {}", GetLastError());
                     }
 
@@ -274,19 +281,27 @@ impl<'a> Runas<'a> {
 
                     // Duplicate the token to ensure it's a primary token
                     let mut h_duptoken = null_mut();
-                    if DuplicateTokenEx(h_token, TOKEN_ALL_ACCESS, null(), SecurityImpersonation, TokenPrimary, &mut h_duptoken) == FALSE {
+                    if DuplicateTokenEx(
+                        h_token, 
+                        TOKEN_ALL_ACCESS, 
+                        null(), 
+                        SecurityImpersonation, 
+                        TokenPrimary, 
+                        &mut h_duptoken
+                    ) == FALSE 
+                    {
                         bail!("DuplicateTokenEx Failed With Error [CreateProcessAsUser]: {}", GetLastError());
                     }
 
                     // Create a new environment block for the user represented by the duplicated token.
-                    if self.env.is_null() && CreateEnvironmentBlock(&mut self.env, h_duptoken, FALSE) == FALSE {
+                    if self.env.is_null() 
+                        && CreateEnvironmentBlock(&mut self.env, h_duptoken, FALSE) == FALSE 
+                    {
                         bail!("CreateEnvironmentBlock Failed With Error: {}", GetLastError());
                     }
 
                     // Launch the new process in the user's session using the duplicated token.
-                    let dir = format!("{}\\System32", std::env::var("SystemRoot")?)
-                        .as_str()
-                        .to_pwstr();
+                    let dir = format!("{}\\System32", std::env::var("SystemRoot")?).as_str().to_pwstr();
                     if CreateProcessAsUserW(
                         h_duptoken,
                         null(),
@@ -307,7 +322,15 @@ impl<'a> Runas<'a> {
                 CreateProcess::WithToken => {
                     // Authenticate user and obtain token
                     let mut h_token = null_mut();
-                    if LogonUserW(username.as_ptr(), domain.as_ptr(), password.as_ptr(), self.logon_type, self.provider, &mut h_token) == FALSE {
+                    if LogonUserW(
+                        username.as_ptr(), 
+                        domain.as_ptr(), 
+                        password.as_ptr(), 
+                        self.logon_type, 
+                        self.provider, 
+                        &mut h_token
+                    ) == FALSE 
+                    {
                         bail!("LogonUserW Failed With Error [CreateProcessWithToken]: {}", GetLastError());
                     }
 
@@ -318,7 +341,15 @@ impl<'a> Runas<'a> {
 
                     // Duplicate the token to ensure it's a primary token
                     let mut h_duptoken = null_mut();
-                    if DuplicateTokenEx(h_token, TOKEN_ALL_ACCESS, null(), SecurityImpersonation, TokenPrimary, &mut h_duptoken) == FALSE {
+                    if DuplicateTokenEx(
+                        h_token, 
+                        TOKEN_ALL_ACCESS, 
+                        null(), 
+                        SecurityImpersonation, 
+                        TokenPrimary, 
+                        &mut h_duptoken
+                    ) == FALSE 
+                    {
                         bail!("DuplicateTokenEx Failed With Error [CreateProcessWithToken]: {}", GetLastError());
                     }
 
@@ -396,7 +427,10 @@ impl<'a> Runas<'a> {
                 w!("Default"),
                 0,
                 FALSE,
-                DESKTOP_READ_CONTROL | DESKTOP_WRITE_DAC | DESKTOP_WRITEOBJECTS | DESKTOP_READOBJECTS,
+                DESKTOP_READ_CONTROL 
+                    | DESKTOP_WRITE_DAC
+                    | DESKTOP_WRITEOBJECTS
+                    | DESKTOP_READOBJECTS,
             );
 
             if h_desktop.is_null() {
@@ -467,7 +501,16 @@ impl<'a> Runas<'a> {
         // Retrieve the name of the window station using GetUserObjectInformationW
         let mut buffer = vec![0u16; 256];
         let mut len = 0;
-        if unsafe { GetUserObjectInformationW(h_winsta, UOI_NAME, buffer.as_mut_ptr().cast(), (buffer.len() * 2) as u32, &mut len) } == FALSE {
+        if unsafe { 
+            GetUserObjectInformationW(
+                h_winsta, 
+                UOI_NAME, 
+                buffer.as_mut_ptr().cast(), 
+                (buffer.len() * 2) as u32, 
+                &mut len
+            ) 
+        } == FALSE 
+        {
             bail!("GetUserObjectInformationW Failed With Error: {}", unsafe { GetLastError() });
         }
 
@@ -535,7 +578,13 @@ impl Token {
 
             // Allocate memory for the TOKEN_MANDATORY_LABEL structure
             let mut buffer = vec![0u8; len as usize];
-            if GetTokenInformation(h_token, TokenIntegrityLevel, buffer.as_mut_ptr().cast(), len, &mut len) == FALSE {
+            if GetTokenInformation(
+                h_token, 
+                TokenIntegrityLevel, 
+                buffer.as_mut_ptr().cast(), 
+                len, &mut len
+            ) == FALSE 
+            {
                 bail!("GetTokenInformation [2] Failed With Error: {}", GetLastError());
             }
 
@@ -602,7 +651,14 @@ impl Token {
 
             // Allocate memory for the TOKEN_PRIVILEGES structure
             let mut buffer = vec![0u8; len as usize];
-            if GetTokenInformation(h_token, TokenPrivileges, buffer.as_mut_ptr().cast(), len, &mut len) == FALSE {
+            if GetTokenInformation(
+                h_token, 
+                TokenPrivileges, 
+                buffer.as_mut_ptr().cast(), 
+                len, 
+                &mut len
+            ) == FALSE 
+            {
                 bail!("GetTokenInformation [2] Failed With Error: {}", GetLastError());
             }
 
@@ -645,7 +701,12 @@ impl Token {
         unsafe {
             // Get the process token for the current process
             let mut h_token = null_mut();
-            if OpenProcessToken(-1isize as HANDLE, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &mut h_token) == FALSE {
+            if OpenProcessToken(
+                -1isize as HANDLE, 
+                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, 
+                &mut h_token
+            ) == FALSE 
+            {
                 bail!("OpenProcessToken Failed With Error: {}", GetLastError());
             }
 
@@ -658,12 +719,25 @@ impl Token {
                 }; 1],
             };
 
-            if LookupPrivilegeValueW(null_mut(), name.to_pwstr().as_ptr(), &mut token_priv.Privileges[0].Luid as *mut LUID) == FALSE {
+            if LookupPrivilegeValueW(
+                null_mut(), 
+                name.to_pwstr().as_ptr(), 
+                &mut token_priv.Privileges[0].Luid as *mut LUID
+            ) == FALSE 
+            {
                 bail!("LookupPrivilegeValueW Failed With Error: {}", GetLastError());
             }
 
             // Apply the adjusted privileges to the token.
-            if AdjustTokenPrivileges(h_token, 0, &token_priv, 0, null_mut(), null_mut()) == FALSE {
+            if AdjustTokenPrivileges(
+                h_token, 
+                0, 
+                &token_priv, 
+                0, 
+                null_mut(), 
+                null_mut()
+            ) == FALSE 
+            {
                 bail!("AdjustTokenPrivileges Failed With Error: {}", GetLastError());
             }
         }

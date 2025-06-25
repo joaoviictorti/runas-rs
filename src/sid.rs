@@ -32,7 +32,15 @@ pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
 
     unsafe {
         // First call to determine required SID buffer size
-        LookupAccountNameA(null_mut(), faqn.as_ptr().cast(), sid, &mut cbsid, null_mut(), &mut len, &mut sid_name);
+        LookupAccountNameA(
+            null_mut(), 
+            faqn.as_ptr().cast(), 
+            sid, 
+            &mut cbsid, 
+            null_mut(), 
+            &mut len, 
+            &mut sid_name
+        );
 
         // Second call to actually retrieve the SID
         let mut sid = vec![0u8; cbsid as usize];

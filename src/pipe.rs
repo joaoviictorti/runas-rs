@@ -1,6 +1,5 @@
 use std::ptr::null_mut;
-
-#[rustfmt::skip]
+use windows_sys::Win32::Foundation::FALSE;
 use windows_sys::Win32::{
     Foundation::HANDLE,
     Security::SECURITY_ATTRIBUTES,
@@ -55,7 +54,14 @@ impl Pipe {
         let mut output = String::new();
 
         unsafe {
-            while ReadFile(h_read, buffer.as_mut_ptr(), buffer.len() as u32, &mut bytes_read, null_mut()) != 0 {
+            while ReadFile(
+                h_read, 
+                buffer.as_mut_ptr(), 
+                buffer.len() as u32, 
+                &mut bytes_read, 
+                null_mut()
+            ) != FALSE 
+            {
                 output.push_str(&String::from_utf8_lossy(&buffer[..bytes_read as usize]));
             }
         }
