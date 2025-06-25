@@ -130,7 +130,11 @@ impl<'a> Acl<'a> {
 
             // Initialize a new security descriptor
             let mut security_descriptor = zeroed::<SECURITY_DESCRIPTOR>();
-            if InitializeSecurityDescriptor((&mut security_descriptor as *mut SECURITY_DESCRIPTOR).cast::<c_void>(), 1) == FALSE {
+            if InitializeSecurityDescriptor(
+                (&mut security_descriptor as *mut SECURITY_DESCRIPTOR).cast::<c_void>(), 
+                1,
+            ) == FALSE 
+            {
                 bail!("Failed to initialize security descriptor (error {})", GetLastError());
             }
 
@@ -159,7 +163,14 @@ impl<'a> Acl<'a> {
 
                     // Add the ACE to the new DACL at the end of the list (0xffffffff indicates the end position)
                     let ace_header = ace as *mut ACE_HEADER;
-                    if AddAce(new_dacl, ACL_REVISION, u32::MAX, ace, (*ace_header).AceSize as u32) == FALSE {
+                    if AddAce(
+                        new_dacl, 
+                        ACL_REVISION, 
+                        u32::MAX, 
+                        ace, 
+                        (*ace_header).AceSize as u32
+                    ) == FALSE 
+                    {
                         bail!("Failed to add existing ACE (error {})", GetLastError());
                     }
                 }
@@ -193,7 +204,13 @@ impl<'a> Acl<'a> {
                     }
                 }
                 Object::Desktop => {
-                    if AddAccessAllowedAce(new_dacl, ACL_REVISION, DESKTOP_ALL, self.sid.as_mut_ptr().cast()) == FALSE {
+                    if AddAccessAllowedAce(
+                        new_dacl, 
+                        ACL_REVISION, 
+                        DESKTOP_ALL, 
+                        self.sid.as_mut_ptr().cast()
+                    ) == FALSE 
+                    {
                         bail!("Failed to add ACE to Desktop (error {})", GetLastError());
                     }
                 }

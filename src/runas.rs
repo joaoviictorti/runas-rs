@@ -427,7 +427,7 @@ impl<'a> Runas<'a> {
                 w!("Default"),
                 0,
                 FALSE,
-                DESKTOP_READ_CONTROL 
+                DESKTOP_READ_CONTROL
                     | DESKTOP_WRITE_DAC
                     | DESKTOP_WRITEOBJECTS
                     | DESKTOP_READOBJECTS,
@@ -503,12 +503,12 @@ impl<'a> Runas<'a> {
         let mut len = 0;
         if unsafe { 
             GetUserObjectInformationW(
-                h_winsta, 
-                UOI_NAME, 
-                buffer.as_mut_ptr().cast(), 
-                (buffer.len() * 2) as u32, 
-                &mut len
-            ) 
+                h_winsta,
+                UOI_NAME,
+                buffer.as_mut_ptr().cast(),
+                (buffer.len() * 2) as u32,
+                &mut len,
+            )
         } == FALSE 
         {
             bail!("GetUserObjectInformationW Failed With Error: {}", unsafe { GetLastError() });
@@ -582,7 +582,7 @@ impl Token {
                 h_token, 
                 TokenIntegrityLevel, 
                 buffer.as_mut_ptr().cast(), 
-                len, &mut len
+                len, &mut len,
             ) == FALSE 
             {
                 bail!("GetTokenInformation [2] Failed With Error: {}", GetLastError());
@@ -652,11 +652,11 @@ impl Token {
             // Allocate memory for the TOKEN_PRIVILEGES structure
             let mut buffer = vec![0u8; len as usize];
             if GetTokenInformation(
-                h_token, 
-                TokenPrivileges, 
-                buffer.as_mut_ptr().cast(), 
-                len, 
-                &mut len
+                h_token,
+                TokenPrivileges,
+                buffer.as_mut_ptr().cast(),
+                len,
+                &mut len,
             ) == FALSE 
             {
                 bail!("GetTokenInformation [2] Failed With Error: {}", GetLastError());
@@ -702,9 +702,9 @@ impl Token {
             // Get the process token for the current process
             let mut h_token = null_mut();
             if OpenProcessToken(
-                -1isize as HANDLE, 
-                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, 
-                &mut h_token
+                -1isize as HANDLE,
+                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+                &mut h_token,
             ) == FALSE 
             {
                 bail!("OpenProcessToken Failed With Error: {}", GetLastError());
@@ -720,24 +720,16 @@ impl Token {
             };
 
             if LookupPrivilegeValueW(
-                null_mut(), 
-                name.to_pwstr().as_ptr(), 
-                &mut token_priv.Privileges[0].Luid as *mut LUID
+                null_mut(),
+                name.to_pwstr().as_ptr(),
+                &mut token_priv.Privileges[0].Luid as *mut LUID,
             ) == FALSE 
             {
                 bail!("LookupPrivilegeValueW Failed With Error: {}", GetLastError());
             }
 
             // Apply the adjusted privileges to the token.
-            if AdjustTokenPrivileges(
-                h_token, 
-                0, 
-                &token_priv, 
-                0, 
-                null_mut(), 
-                null_mut()
-            ) == FALSE 
-            {
+            if AdjustTokenPrivileges(h_token, 0, &token_priv, 0, null_mut(), null_mut()) == FALSE {
                 bail!("AdjustTokenPrivileges Failed With Error: {}", GetLastError());
             }
         }

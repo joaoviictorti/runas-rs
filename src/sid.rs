@@ -16,7 +16,6 @@ use windows_sys::Win32::{
 /// # Returns
 ///
 /// * Returns `Ok(Vec<u8>)` containing the SID bytes on success, or an error using `anyhow`.
-#[rustfmt::skip]
 pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
     let full_account_name = if !domain.is_empty() && domain != "." {
         format!("{}\\{}", domain, username)
@@ -33,13 +32,13 @@ pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
     unsafe {
         // First call to determine required SID buffer size
         LookupAccountNameA(
-            null_mut(), 
-            faqn.as_ptr().cast(), 
-            sid, 
-            &mut cbsid, 
-            null_mut(), 
-            &mut len, 
-            &mut sid_name
+            null_mut(),
+            faqn.as_ptr().cast(),
+            sid,
+            &mut cbsid,
+            null_mut(),
+            &mut len,
+            &mut sid_name,
         );
 
         // Second call to actually retrieve the SID
