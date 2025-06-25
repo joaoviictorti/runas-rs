@@ -32,3 +32,11 @@ jobs:
 
       - name: Run Clippy
         run: cargo clippy
+
+  doc:
+    name: Docs Check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check docs
+        run: cargo doc --no-deps --document-private-items
