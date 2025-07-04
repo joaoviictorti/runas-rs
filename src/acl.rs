@@ -163,14 +163,7 @@ impl<'a> Acl<'a> {
 
                     // Add the ACE to the new DACL at the end of the list (0xffffffff indicates the end position)
                     let ace_header = ace as *mut ACE_HEADER;
-                    if AddAce(
-                        new_dacl, 
-                        ACL_REVISION, 
-                        u32::MAX, 
-                        ace, 
-                        (*ace_header).AceSize as u32
-                    ) == FALSE 
-                    {
+                    if AddAce(new_dacl, ACL_REVISION, u32::MAX, ace, (*ace_header).AceSize as u32) == FALSE {
                         bail!("Failed to add existing ACE (error {})", GetLastError());
                     }
                 }

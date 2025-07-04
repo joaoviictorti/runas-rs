@@ -18,7 +18,6 @@ impl Pipe {
     /// * Returns a tuple `(HANDLE, HANDLE)`, where:
     /// - The first element is the read handle.
     /// - The second element is the write handle.
-    #[rustfmt::skip]
     pub fn create() -> anyhow::Result<(HANDLE, HANDLE)> {
         unsafe {
             let mut h_read = null_mut();
