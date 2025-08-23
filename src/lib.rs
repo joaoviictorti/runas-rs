@@ -53,6 +53,12 @@
 //!     Ok(())
 //! }
 //! ```
+//!
+//! # More Information
+//!
+//! For updates, usage guides, and examples, visit the [repository].
+//!
+//! [repository]: https://github.com/joaoviictorti/runas-rs
 
 #![allow(clippy::upper_case_acronyms)]
 #![allow(non_upper_case_globals)]
