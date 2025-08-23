@@ -13,7 +13,9 @@
 //! - Inspect and manipulate process tokens (privileges, integrity level).
 //! - Support for loading full user profiles, custom environment blocks, or `netonly` logons.
 //!
-//! ## Example
+//! ## Examples
+//!
+//! ### Running a Process as Another User
 //! ```no_run
 //! use runas_rs::{Runas, Options};
 //! use anyhow::Result;
@@ -28,10 +30,29 @@
 //! }
 //! ```
 //!
-//! For the full README, examples and CLI usage, check the [repository](https://github.com/joaoviictorti/runas-rs).
+//! ### Inspecting and Manipulating Token Privileges
+//! ```no_run
+//! use runas_rs::Token;
+//! use anyhow::Result;
 //!
-//! ## License
-//! Licensed under GPL-3.0. See [LICENSE](https://github.com/joaoviictorti/runas-rs/blob/main/LICENSE).
+//! fn main() -> Result<()> {
+//!     // Query the current integrity level
+//!     let level = Token::integrity_level()?;
+//!     println!("Integrity Level: {}", level);
+//!
+//!     // Check for privileges
+//!     if Token::has_privilege("SeImpersonatePrivilege")? {
+//!         println!("SeImpersonatePrivilege is available.");
+//!     }
+//!
+//!     // Try enabling a privilege
+//!     if Token::enable_privilege("SeImpersonatePrivilege")? {
+//!         println!("Privilege successfully enabled!");
+//!     }
+//!
+//!     Ok(())
+//! }
+//! ```
 
 #![allow(clippy::upper_case_acronyms)]
 #![allow(non_upper_case_globals)]
