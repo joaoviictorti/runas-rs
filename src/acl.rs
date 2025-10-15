@@ -61,17 +61,13 @@ pub struct Acl<'a> {
 }
 
 impl<'a> Acl<'a> {
-    /// Creates a new [`Acl`] instance.
+    /// Creates a new `Acl`.
     ///
     /// # Arguments
     ///
     /// * `h_object` - A handle to the Windows Station or Desktop.
     /// * `sid` - The security identifier (SID) of the user.
     /// * `object` - Specifies whether modifying a `WindowsStation` or `Desktop`.
-    ///
-    /// # Return
-    ///
-    /// * Returning a new [`Acl`] instance.
     pub fn new(h_object: *mut c_void, sid: &'a mut Vec<u8>, object: Object) -> Self {
         Self { h_object, sid, object }
     }
@@ -80,8 +76,7 @@ impl<'a> Acl<'a> {
     ///
     /// # Returns
     ///
-    /// * `Ok(())` - If the operation is successful.
-    /// * `Err(anyhow::Error)` - If any Windows API call fails.
+    /// If the operation is successful.
     pub fn add_ace(&mut self) -> Result<()> {
         unsafe {
             // Retrieve the required buffer size for the security descriptor
@@ -239,9 +234,7 @@ impl<'a> Acl<'a> {
     ///
     /// # Return
     ///
-    /// * `Ok(true)` if all required ACEs are found with correct permissions and flags.
-    /// * `Ok(false)` if any expected ACE is missing or incorrectly configured.
-    /// * `Err(anyhow::Error)` if any Windows API call fails during permission inspection.
+    /// If all required ACEs are found with correct permissions and flags.
     pub fn check_permissions(&mut self) -> Result<bool> {
         unsafe {
             // Retrieve the required buffer size for the security descriptor

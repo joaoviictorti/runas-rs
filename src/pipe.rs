@@ -1,4 +1,5 @@
 use std::ptr::null_mut;
+use anyhow::{Result, anyhow};
 use windows_sys::Win32::Foundation::FALSE;
 use windows_sys::Win32::{
     Foundation::HANDLE,
@@ -12,13 +13,7 @@ pub struct Pipe;
 
 impl Pipe {
     /// Creates an anonymous pipe and returns both read and write handles.
-    ///
-    /// # Returns
-    ///
-    /// * Returns a tuple `(HANDLE, HANDLE)`, where:
-    /// - The first element is the read handle.
-    /// - The second element is the write handle.
-    pub fn create() -> anyhow::Result<(HANDLE, HANDLE)> {
+    pub fn create() -> Result<(HANDLE, HANDLE)> {
         unsafe {
             let mut h_read = null_mut();
             let mut h_write = null_mut();
@@ -29,7 +24,7 @@ impl Pipe {
             };
 
             if CreatePipe(&mut h_read, &mut h_write, &sa, 0) == 0 {
-                return Err(anyhow::anyhow!("Error creating the pipe"));
+                return Err(anyhow!("Error creating the pipe"));
             }
 
             Ok((h_read, h_write))
@@ -46,7 +41,7 @@ impl Pipe {
     ///
     /// # Returns
     ///
-    /// * Returns a `String` containing the data read from the pipe.
+    /// Containing the data read from the pipe.
     pub fn read(h_read: HANDLE) -> String {
         let mut buffer = [0u8; 1 << 12];
         let mut bytes_read = 0;

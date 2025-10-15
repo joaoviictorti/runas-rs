@@ -15,7 +15,7 @@ use windows_sys::Win32::{
 ///
 /// # Returns
 ///
-/// * Returns `Ok(Vec<u8>)` containing the SID bytes on success, or an error using `anyhow`.
+/// Containing the SID bytes on success.
 pub fn get_user_sid(username: &str, domain: &str) -> Result<Vec<u8>> {
     let full_account_name = if !domain.is_empty() && domain != "." {
         format!("{}\\{}", domain, username)

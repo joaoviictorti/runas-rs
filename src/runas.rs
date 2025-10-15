@@ -57,7 +57,7 @@ impl Options {
     ///
     /// # Returns
     ///
-    /// * `true` if the current instance includes the `other` option, `false` otherwise.
+    /// If the current instance includes the `other` option
     ///
     /// # Example
     ///
@@ -82,7 +82,7 @@ impl BitOr for Options {
     ///
     /// # Returns
     ///
-    /// * A new [`Options`] instance that represents the combination of both options.
+    /// A new [`Options`] instance that represents the combination of both options.
     ///
     /// # Example
     ///
@@ -128,11 +128,6 @@ pub struct Runas<'a> {
 }
 
 impl Default for Runas<'_> {
-    /// Provides a default-initialized `Runas`.
-    ///
-    /// # Returns
-    ///
-    /// * A default-initialized `Runas`.
     fn default() -> Self {
         Self {
             username: "",
@@ -155,10 +150,6 @@ impl<'a> Runas<'a> {
     /// * `username` - The name of the user account.
     /// * `password` - The password associated with the account.
     /// * `domain` - (Optional) The domain of the user. Defaults to an empty string.
-    ///
-    /// # Returns
-    ///
-    /// * Returns a new [`Runas`] instance configured with the given credentials.
     ///
     /// # Example
     ///
@@ -226,8 +217,7 @@ impl<'a> Runas<'a> {
     ///
     /// # Returns
     ///
-    /// * `Ok(String)` - Command output (if available).
-    /// * `Err(anyhow::Error)` - If any Windows API call fails.
+    /// Command output (if available).
     ///
     /// # Example
     ///
@@ -404,8 +394,7 @@ impl<'a> Runas<'a> {
     ///
     /// # Returns
     ///
-    /// * `Ok(String)` - The configured window station name.
-    /// * `Err(anyhow::Error)` - If any API call fails.
+    /// The configured window station name.
     fn configure(&self) -> Result<String> {
         let name = self.get_windows_station()?;
         let station_name = name.as_str().to_pwstr();
@@ -463,14 +452,13 @@ impl<'a> Runas<'a> {
 
     /// Decides which process creation API should be used based on privileges and integrity.
     ///
-    /// * [`CreateProcessAsUser`] — If `SeAssignPrimaryTokenPrivilege` is present and integrity is Medium or higher
-    /// * [`CreateProcessWithToken`] — If `SeImpersonatePrivilege` is present and integrity is High or higher
-    /// * [`CreateProcessWithLogon`] — Default/fallback method
+    /// * [`CreateProcessAsUser`] - If `SeAssignPrimaryTokenPrivilege` is present and integrity is Medium or higher
+    /// * [`CreateProcessWithToken`] - If `SeImpersonatePrivilege` is present and integrity is High or higher
+    /// * [`CreateProcessWithLogon`] - Default/fallback method
     ///
     /// # Returns
     ///
-    /// * `Ok(CreateProcess)` - Enum indicating the best available API for process creation
-    /// * `Err(anyhow::Error)` - If privilege or integrity detection fails
+    /// Enum indicating the best available API for process creation
     fn default_process(&self) -> Result<CreateProcess> {
         let integrity = Token::integrity_level()?;
         let se_impersonate = Token::has_privilege("SeImpersonatePrivilege")?;
@@ -489,8 +477,7 @@ impl<'a> Runas<'a> {
     ///
     /// # Returns
     ///
-    /// * `Ok(String)` - The name of the current Windows station.
-    /// * `Err(anyhow::Error)` - If the function fails to retrieve the station name.
+    /// The name of the current Windows station.
     fn get_windows_station(&self) -> Result<String> {
         // Get a handle to the current process's window station
         let h_winsta = unsafe { GetProcessWindowStation() };
@@ -522,7 +509,6 @@ impl<'a> Runas<'a> {
     }
 }
 
-/// Implements the `Drop` trait to release env when `Runas` goes out of scope.
 impl Drop for Runas<'_> {
     fn drop(&mut self) {
         if !self.env.is_null() {
@@ -549,11 +535,6 @@ pub struct Token;
 
 impl Token {
     /// Returns the integrity level of the current process token.
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(&'static str)` - A string indicating the integrity level.
-    /// * `Err(anyhow::Error)` - If any token API call fails.
     ///
     /// # Example
     ///
@@ -623,9 +604,7 @@ impl Token {
     ///
     /// # Returns
     ///
-    /// * `Ok(true)` if the privilege is found in the token.
-    /// * `Ok(false)` if the privilege is not found.
-    /// * `Err(anyhow::Error)` if the token query fails.
+    /// If the privilege is found in the token.
     ///
     /// # Example
     ///
