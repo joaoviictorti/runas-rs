@@ -1,5 +1,8 @@
-use std::{ffi::CString, ptr::null_mut};
+// Copyright (c) 2025 joaoviictorti
+// Licensed under the GNU General Public License v3.0 (GPL-3.0).
+// See the LICENSE file in the project root for full license details.
 
+use std::{ffi::CString, ptr::null_mut};
 use anyhow::{Result, bail};
 use windows_sys::Win32::{
     Foundation::{FALSE, GetLastError},

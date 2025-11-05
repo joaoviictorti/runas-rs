@@ -1,3 +1,7 @@
+// Copyright (c) 2025 joaoviictorti
+// Licensed under the GNU General Public License v3.0 (GPL-3.0).
+// See the LICENSE file in the project root for full license details.
+
 use std::{
     ffi::{OsStr, c_void},
     mem::zeroed,
@@ -27,7 +31,7 @@ use windows_sys::Win32::{
 
 use crate::{
     acl::{Acl, Object},
-    pipe::Pipe,
+    pipe::{create_pipe, read_pipe},
     sid::get_user_sid,
 };
 
@@ -231,7 +235,7 @@ impl<'a> Runas<'a> {
             let mut desktop_wide = desktop.as_str().to_pwstr();
 
             // Create a pipe for interprocess communication (to capture output / error)
-            let (read, write) = Pipe::create()?;
+            let (read, write) = create_pipe()?;
             let mut pi = zeroed::<PROCESS_INFORMATION>();
             let si = STARTUPINFOW {
                 cb: size_of::<STARTUPINFOW>() as u32,
@@ -383,7 +387,7 @@ impl<'a> Runas<'a> {
             CloseHandle(write);
 
             // Read the output from the process and return it as a string
-            Ok(Pipe::read(read))
+            Ok(read_pipe(read))
         }
     }
 
