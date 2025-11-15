@@ -1,7 +1,3 @@
-// Copyright (c) 2025 joaoviictorti
-// Licensed under the GNU General Public License v3.0 (GPL-3.0).
-// See the LICENSE file in the project root for full license details.
-
 use std::ptr::null_mut;
 use anyhow::{Result, anyhow};
 use windows_sys::Win32::Foundation::FALSE;
